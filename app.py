@@ -16,23 +16,40 @@ def predictions(feed):
   fm = gtfs_realtime_pb2.FeedMessage()
   feed = urlopen(gtfsrt)
   fm.ParseFromString(feed.read())
-  timestamp = datetime.datetime.utcfromtimestamp(fm.header.timestamp)
+  # timestamp = datetime.datetime.utcfromtimestamp(fm.header.timestamp)
   b = ET.Element('body')
   for entity in fm.entity:
     tu = entity.trip_update
     for stu in tu.stop_time_update:
+      # if (not stu.departure.delay and not stu.departure.time and not stu.arrival.delay and not stu.arrival.time):
+      #   continue
       coll = ET.SubElement(b, 'predictions')
-      coll.set('routeTag', tu.trip.trip_id)
-      coll.set('routeTitle', tu.vehicle.label)
-      coll.set('stopId', stu.stop_id)
-      coll.set('stopSequence', stu.stop_sequence)
+      if (tu.trip.route_id):
+        coll.set('routeTag', tu.trip.route_id)
+      if (tu.vehicle.label):
+        coll.set('routeTitle', tu.vehicle.label)
+      coll.set('stopTitle', stu.stop_id)
+      # coll.set('stopTitle', str(stu.stop_sequence))
       dir = ET.SubElement(coll, 'direction')
       pred = ET.SubElement(dir, 'prediction')
+      # if (tu.vehicle.id):
+      #   pred.set('tripTag', tu.vehicle.id)
+      if (tu.trip.trip_id):
+        pred.set('tripTag', tu.trip.trip_id)
+      if (stu.departure.delay):
+        pred.set('seconds', str(stu.departure.delay))
+        # if (stu.departure.delay >= 60):
+        pred.set('minutes', str(int(stu.departure.delay/60)))
+        pred.set('isDeparture', 'true')
+      else:
+        pred.set('seconds', str(stu.arrival.delay))
+        pred.set('minutes', str(int(stu.arrival.delay/60)))
+        pred.set('isDeparture', 'false')
       if (stu.departure.time):
-        pred.set('epochTime', stu.arrival.time)
+        pred.set('epochTime', str(stu.departure.time))
         pred.set('isDeparture', 'true')
       elif (stu.arrival.time):
-        pred.set('epochTime', stu.arrival.time)
+        pred.set('epochTime', str(stu.arrival.time))
         pred.set('isDeparture', 'false')
   rv = app.make_response(ET.tostring(b))
   rv.mimetype = 'text/xml'
