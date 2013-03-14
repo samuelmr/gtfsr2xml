@@ -16,6 +16,7 @@ def predictions(feed):
   fm = gtfs_realtime_pb2.FeedMessage()
   feed = urlopen(gtfsrt)
   fm.ParseFromString(feed.read())
+  # print fm
   # timestamp = datetime.datetime.utcfromtimestamp(fm.header.timestamp)
   b = ET.Element('body')
   for entity in fm.entity:
@@ -61,17 +62,21 @@ def locations(feed):
   fm = gtfs_realtime_pb2.FeedMessage()
   feed = urlopen(gtfsrt)
   fm.ParseFromString(feed.read())
-  timestamp = datetime.datetime.utcfromtimestamp(fm.header.timestamp)
+  # print fm
+  # timestamp = datetime.datetime.utcfromtimestamp(fm.header.timestamp)
   b = ET.Element('body')
   for entity in fm.entity:
     ve = entity.vehicle
     pos = ve.position
     v = ET.SubElement(b, 'vehicle')
-    v.set('id', ve.vehicle.id)
-    v.set('routeTag', ve.trip.trip_id)
+    if (ve.vehicle.id):
+      v.set('id', ve.vehicle.id)
+    if (ve.trip.trip_id):
+      v.set('routeTag', ve.trip.trip_id)
     v.set('lat', str(pos.latitude))
     v.set('lon', str(pos.longitude))
-    v.set('heading', str(int(pos.bearing)))
+    if (pos.bearing):
+      v.set('heading', str(int(pos.bearing)))
     if (pos.speed):
       v.set('speedKmHr', str(pos.speed * 3.6))
   rv = app.make_response(ET.tostring(b))
